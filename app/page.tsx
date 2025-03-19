@@ -1,103 +1,105 @@
+"use client";
+import { useState } from "react";
+import axios from "axios";
 import Image from "next/image";
+import { FiArrowDownCircle } from "react-icons/fi"; // Icon for price drop
+
+interface IAnnonce {
+  title: string;
+  price: string;
+  link: string;
+  image: string;
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [annonces, setAnnonces] = useState<IAnnonce[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const fetchAnnonces = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get("/api/scrape");
+      setAnnonces(res.data.annonces);
+    } catch (error) {
+      console.error("Error fetching annonces:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section className="pb-28">
+      {/* header */}
+      <div className="w-11/12 mb-10 py-7 max-w-[1280px] mx-auto flex items-end justify-between">
+        <h1 className="text-2xl font-bold">
+          Scraper LeBonCoin - Skates électriques
+        </h1>
+        <button
+          className="bg-blue-500 disabled:cursor-not-allowed disabled:opacity-35 text-white py-2 cursor-pointer hover:scale-110 transition-all ease-in-out delay-75 px-6 rounded-md"
+          onClick={fetchAnnonces}
+          disabled={loading} // Disable button while loading
+        >
+          {loading ? "Chargement..." : "Récupérer les annonces"}
+        </button>
+      </div>
+
+      {/* products list */}
+      {loading ? (
+        <div className="w-11/12 max-w-[1200px] mx-auto h-[400px] flex items-center justify-center ">
+          <p className="mt-4 text-gray-500">Chargement des annonces...</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      ) : (
+        <div className="w-11/12 max-w-[1280px] mx-auto gap-y-7 items-stretch flex justify-between flex-wrap ">
+          {annonces.map((annonce, index) => {
+            const isPriceDropped = annonce.price
+              .toLowerCase()
+              .includes("baisse de prix");
+            const price = isPriceDropped
+              ? annonce.price.replace("Baisse de prix", "").trim()
+              : annonce.price;
+
+            return (
+              <div
+                key={index}
+                className="w-full border border-gray-200 shadow rounded-md max-w-[300px] p-3"
+              >
+                {/* product image */}
+                <Image
+                  src={annonce.image}
+                  alt={annonce.title}
+                  width={300}
+                  height={300}
+                  className="w-full aspect-[3/3.5] rounded object-cover border border-gray-400"
+                />
+                {/* product info */}
+                <div className="flex flex-col gap-1 items-end mt-3">
+                  <h2 className="w-full font-semibold text-nowrap overflow-hidden truncate">
+                    {annonce.title}
+                  </h2>
+
+                  <div className="flex w-full gap-2 items-center justify-start">
+                    <p className="text-gray-700">{price}</p>
+                    {isPriceDropped && (
+                      <FiArrowDownCircle className="text-red-500" />
+                    )}
+                  </div>
+
+                  <a
+                    href={annonce.link}
+                    target="_blank"
+                    className="text-blue-600 w-full"
+                  >
+                    Voir l&apos;annonce
+                  </a>
+                  <button className="bg-green-500 mt-4 text-xs text-white py-1.5 px-3 rounded cursor-pointer hover:scale-110 transition-all ease-in-out delay-75">
+                    Envoyer un message
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }
