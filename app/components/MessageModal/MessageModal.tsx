@@ -19,7 +19,6 @@ interface PropsType {
 }
 
 export default function MessageModal({ setToggleMessageModal, toggleMessageModal, productTitle, productId }: PropsType) {
-    const token = "Bearer test";
     const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>();
     const [sending, setSending] = useState<boolean>(false);
    
@@ -27,29 +26,36 @@ export default function MessageModal({ setToggleMessageModal, toggleMessageModal
     const onSubmit = async (data: FormData) => {
         setSending(true);
         try {
+            const bearerToken = "your-bearer-token";
+    
             const res = await axios.post(
-                `https://api.leboncoin.fr/api/frontend/v1/classified/${productId}/reply`,
-                { message: data.message },
+                "/api/message", 
                 { 
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    } 
-                }
+                    productId, 
+                    message: data.message,
+                    bearerToken
+                },
+                { headers: { "Content-Type": "application/json" } }
             );
+    
             console.log(res);
-            toast.success('Message envoyé avec succès !');
+            toast.success("Message envoyé avec succès !");
             setToggleMessageModal(false);
             reset();
         } catch (error) {
-            console.error("Erreur lors de l'envoi du message :", error);
-            toast.error("Échec de l'envoi du message.");
-            reset();
+            if (axios.isAxiosError(error)) {
+                console.error("Erreur lors de l'envoi du message :", error);
+                toast.error(error.response?.data?.error || "Échec de l'envoi du message.");
+            } else {
+                console.error("Une erreur inattendue est survenue :", error);
+                toast.error("Une erreur inattendue s'est produite.");
+            }
         } finally {
             setSending(false);
-            reset();
         }
     };
+    
+    
 
     return (
    <>
