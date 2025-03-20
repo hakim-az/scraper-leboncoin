@@ -52,6 +52,7 @@ export default function MessageModal({ setToggleMessageModal, toggleMessageModal
             }
         } finally {
             setSending(false);
+            reset();
         }
     };
     

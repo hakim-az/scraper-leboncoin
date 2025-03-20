@@ -10,7 +10,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
-        const browser = await puppeteer.launch({ headless: false });
+        // Launch puppeteer in headless mode (no visible browser)
+        const browser = await puppeteer.launch({ headless: true });  // Set headless to true
         const page = await browser.newPage();
 
         // Set authentication headers
@@ -18,22 +19,22 @@ export async function POST(req: NextRequest) {
             Authorization: `Bearer ${bearerToken}`
         });
 
-        // 1️⃣ Open product page
+        // Open product page
         const productUrl = `https://www.leboncoin.fr/ad/sport_plein_air/${productId}`;
         await page.goto(productUrl, { waitUntil: "domcontentloaded" });
 
-        // 2️⃣ Click on "Contacter" button and wait for redirection
+        // Click on "Contacter" button and wait for redirection
         await page.waitForSelector('[data-test-id="contact-button"]', { timeout: 5000 });
         await Promise.all([
             page.click('[data-test-id="contact-button"]'),
             page.waitForNavigation({ waitUntil: "domcontentloaded" }) // Wait for the page to change
         ]);
 
-        // 3️⃣ Fill in message
+        // Fill in message
         await page.waitForSelector('textarea#body', { timeout: 5000 });
         await page.type('textarea#body', message);
 
-        // 4️⃣ Click the send button
+        // Click the send button
         await page.waitForSelector('[data-test-id="send-message"]', { timeout: 5000 });
         await page.click('[data-test-id="send-message"]');
 
