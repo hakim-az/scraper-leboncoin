@@ -45,4 +45,3 @@ export const GET = async () => {
     return NextResponse.json({ error: 'Erreur lors du scraping' }, { status: 500 });
   }
 };
-

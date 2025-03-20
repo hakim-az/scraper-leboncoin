@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Launch puppeteer in headless mode (no visible browser)
-        const browser = await puppeteer.launch({ headless: true });  // Set headless to true
+        const browser = await puppeteer.launch({ headless: true });
         const page = await browser.newPage();
 
         // Set authentication headers
@@ -23,23 +23,35 @@ export async function POST(req: NextRequest) {
         const productUrl = `https://www.leboncoin.fr/ad/sport_plein_air/${productId}`;
         await page.goto(productUrl, { waitUntil: "domcontentloaded" });
 
-        // Click on "Contacter" button and wait for redirection
+        // Wait for and click the "Contacter" button (if needed)
         await page.waitForSelector('[data-test-id="contact-button"]', { timeout: 5000 });
-        await Promise.all([
-            page.click('[data-test-id="contact-button"]'),
-            page.waitForNavigation({ waitUntil: "domcontentloaded" }) // Wait for the page to change
-        ]);
+        await page.click('[data-test-id="contact-button"]');
+        
+        // Wait for the page to load before triggering the API call
+        await page.waitForNavigation({ waitUntil: "domcontentloaded" });
 
-        // Fill in message
-        await page.waitForSelector('textarea#body', { timeout: 5000 });
-        await page.type('textarea#body', message);
+        // Intercept network requests and trigger the reply API directly
+        await page.setRequestInterception(true);
+        page.on('request', (request) => {
+            if (request.url().includes(`/api/frontend/v1/classified/${productId}/reply`)) {
+                request.continue({
+                    method: 'POST',
+                    postData: JSON.stringify({ message }),
+                    headers: {
+                        ...request.headers(),
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${bearerToken}`,
+                    }
+                });
+            } else {
+                request.continue();
+            }
+        });
 
-        // Click the send button
-        await page.waitForSelector('[data-test-id="send-message"]', { timeout: 5000 });
-        await page.click('[data-test-id="send-message"]');
-
-        // Wait for the action to complete
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Wait for the response from the API
+        await page.waitForResponse(response =>
+            response.url().includes(`/api/frontend/v1/classified/${productId}/reply`) && response.status() === 200
+        );
 
         await browser.close();
 

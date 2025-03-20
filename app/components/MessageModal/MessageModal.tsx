@@ -22,12 +22,12 @@ export default function MessageModal({ setToggleMessageModal, toggleMessageModal
     const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>();
     const [sending, setSending] = useState<boolean>(false);
    
-
     const onSubmit = async (data: FormData) => {
         setSending(true);
         try {
             const bearerToken = "your-bearer-token";
     
+            // Send request to your API endpoint
             const res = await axios.post(
                 "/api/message", 
                 { 
@@ -39,9 +39,13 @@ export default function MessageModal({ setToggleMessageModal, toggleMessageModal
             );
     
             console.log(res);
-            toast.success("Message envoyé avec succès !");
-            setToggleMessageModal(false);
-            reset();
+            if (res.status === 200) {
+                toast.success("Message envoyé avec succès !");
+                setToggleMessageModal(false);
+                reset();
+            } else {
+                throw new Error("Message sending failed");
+            }
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 console.error("Erreur lors de l'envoi du message :", error);
@@ -56,8 +60,6 @@ export default function MessageModal({ setToggleMessageModal, toggleMessageModal
         }
     };
     
-    
-
     return (
    <>
      <ToastContainer position="top-right" autoClose={3000} />
